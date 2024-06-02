@@ -1,3 +1,5 @@
+use futures::{stream, StreamExt};
+use reqwest::Client;
 use std::env;
 use std::path::Path;
 use std::fs;
@@ -19,34 +21,48 @@ async fn build_requests(args : &[String]){
     let uri = &args[1];
 
     let wordlist = &args[2];
-    let mut words : Vec<String> = Vec::new();
+    let mut urls : Vec<String> = Vec::new();  
+
+    let mut parallelThreads : usize = 0;
+    match args.get(3){
+        Some(x) => {parallelThreads = x.parse::<usize>().unwrap()},
+        None => {
+            parallelThreads = 3; 
+            println!("Using default amount of threads - 3");
+        }
+    }
+
 
     for line in fs::read_to_string(wordlist).unwrap().lines(){
-        words.push(line.to_string());
+        let mut url = uri.to_string();
+        url.push_str(line);
+        urls.push(url);
     }
 
-    while !&words.is_empty(){
-        let cur_word = words.pop().unwrap();
-        let mut url = String::from(uri);
-        url.push_str(&cur_word);
-        //println!("{}", url);
-        let req = reqwest::get(url).await.unwrap();
-        match req.status(){
+    let client = Client::new();
+
+    let responses = stream::iter(urls).map(|url| {
+        let client = client.clone();
+        tokio::spawn(async move {
+            let resp = client.get(url).send().await;
+            resp.unwrap()
+        })
+    }).buffer_unordered(parallelThreads);
+    
+    responses.for_each(|response| async{
+        let resp = response.unwrap();
+        match resp.status(){
             reqwest::StatusCode::OK => {
-                println!("Founded {}", &req.url().domain().unwrap());
-            }
-            reqwest::StatusCode::UNAUTHORIZED => {
-                println!("Founded, requires a token: {}", &req.url().domain().unwrap());
-            }
-            _ => {
-                println!("Couldn't find: {}", &req.url().domain().unwrap());
-                //panic!("something went wrong with the response status code");
-            }
-        }
+                println!("Found: {}", resp.url());
+            },
+            _ => {}
+        };
+    }).await;
 
-    }
-    //println!("{:?}",req);
 }
+
+
+
 #[tokio::main]
 async fn main() {
     let args : Vec<String> = env::args().collect();
