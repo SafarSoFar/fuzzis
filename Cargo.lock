@@ -247,6 +247,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "fuzzis"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "reqwest",
+ "tokio",
+]
+
+[[package]]
 name = "gimli"
 version = "0.28.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -707,15 +716,6 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
  "winreg",
-]
-
-[[package]]
-name = "rust-web-dir-enum"
-version = "0.1.0"
-dependencies = [
- "futures",
- "reqwest",
- "tokio",
 ]
 
 [[package]]

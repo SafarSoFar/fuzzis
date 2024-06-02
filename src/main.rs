@@ -3,16 +3,18 @@ use reqwest::Client;
 use std::env;
 use std::path::Path;
 use std::fs;
+use std::thread::sleep;
+use std::time::Duration;
 const TXT_EXTENTION : &str = "txt";
 
 fn check_args_validness(args : &[String]) -> bool{
-    if args.len() != 3{
-        println!("Usage: cargo run -URL -wordlist.txt");
+    if args.len() < 3{
+        println!("Usage: ./fuzzis (required:) -URL -wordlist.txt (optional:) -threads_amount");
         return false;
     }
 
     if Path::new(&args[2]).extension().unwrap() != TXT_EXTENTION{
-        println!("The tool accepts only .txt extention");
+        println!("The tool accepts only .txt wordlist extention");
         return false;
     }
     return true;
@@ -25,8 +27,12 @@ async fn build_requests(args : &[String]){
 
     let mut parallelThreads : usize = 0;
     match args.get(3){
-        Some(x) => {parallelThreads = x.parse::<usize>().unwrap()},
+        Some(x) => {
+            parallelThreads = x.parse::<usize>().expect("Error: threads-amount is ONLY integer value");
+            println!("Using {} threads for requests", &parallelThreads);
+        },
         None => {
+            // If user didn't provide threads - 3 threads by default
             parallelThreads = 3; 
             println!("Using default amount of threads - 3");
         }
@@ -41,6 +47,11 @@ async fn build_requests(args : &[String]){
 
     let client = Client::new();
 
+
+    println!("{} Directory enumeration starts in 5 seconds", &uri);
+    sleep(Duration::from_secs(5));
+    println!("{} Directory enumeration started", &uri);
+    println!("Found directories: ");
     let responses = stream::iter(urls).map(|url| {
         let client = client.clone();
         tokio::spawn(async move {
@@ -50,10 +61,13 @@ async fn build_requests(args : &[String]){
     }).buffer_unordered(parallelThreads);
     
     responses.for_each(|response| async{
-        let resp = response.unwrap();
+        let resp = response.expect("Request: not possible to retrieve GET request");
         match resp.status(){
             reqwest::StatusCode::OK => {
                 println!("Found: {}", resp.url());
+            },
+            reqwest::StatusCode::FORBIDDEN => {
+                println!("Found, access forbidden {}", resp.url())
             },
             _ => {}
         };
@@ -69,7 +83,6 @@ async fn main() {
     if !check_args_validness(&args){
         return;
     }
-    //println!("{:?}", result);
     build_requests(&args).await;
 }
 

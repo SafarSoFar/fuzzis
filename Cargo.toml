@@ -1,5 +1,5 @@
 [package]
-name = "rust-web-dir-enum"
+name = "fuzzis"
 version = "0.1.0"
 edition = "2021"
 
