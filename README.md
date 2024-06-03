@@ -1,5 +1,5 @@
 # Fuzzis
-A CLI tool for web *directory enumeration* and *fuzzing*
+A CLI tool for web *directories/files enumeration*
 
 ## Build
 Build with cargo:

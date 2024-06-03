@@ -9,7 +9,17 @@ const TXT_EXTENTION : &str = "txt";
 
 fn check_args_validness(args : &[String]) -> bool{
     if args.len() < 3{
-        println!("Usage: ./fuzzis (required:) -URL -wordlist.txt (optional:) -threads_amount");
+        println!(
+        "   Usage:
+
+        Insert [] element as a fuzz location, if there is a few [] elements - only the FIRST one will be used
+        ./fuzzis (required:) -URL+fuzz_location -wordlist.txt (optional:) -threads_amount"
+        );
+        println!(
+        "   Example: 
+
+        ./fuzzis https://example.com/[] home/my-directory/fuzz-list.txt 3 \n"
+        );
         return false;
     }
 
@@ -25,40 +35,43 @@ async fn build_requests(args : &[String]){
     let wordlist = &args[2];
     let mut urls : Vec<String> = Vec::new();  
 
-    let mut parallelThreads : usize = 0;
+    let fuzz_index : usize = uri.find("[]").expect("Error: Nothing to fuzz.");
+    let trimmed_brackets_uri = uri.replace("[]", "");
+
+    let mut parallel_threads : usize = 0;
     match args.get(3){
         Some(x) => {
-            parallelThreads = x.parse::<usize>().expect("Error: threads-amount is ONLY integer value");
-            println!("Using {} threads for requests", &parallelThreads);
+            parallel_threads = x.parse::<usize>().expect("Error: threads-amount is ONLY integer value");
+            println!("Using {} threads for requests", &parallel_threads);
         },
         None => {
             // If user didn't provide threads - 3 threads by default
-            parallelThreads = 3; 
+            parallel_threads = 3; 
             println!("Using default amount of threads - 3");
         }
     }
 
 
     for line in fs::read_to_string(wordlist).unwrap().lines(){
-        let mut url = uri.to_string();
-        url.push_str(line);
+        let mut url = trimmed_brackets_uri.to_string();
+        url.insert_str(fuzz_index, line);
         urls.push(url);
     }
 
     let client = Client::new();
 
 
-    println!("{} Directory enumeration starts in 5 seconds", &uri);
+    println!("Fuzzing & brute forcing: {} starts in 5 seconds", &uri);
     sleep(Duration::from_secs(5));
-    println!("{} Directory enumeration started", &uri);
-    println!("Found directories: ");
+    println!("Fuzzing & brute forcing: {} started.", &uri);
+    println!("OK & Forbidden statuses found: ");
     let responses = stream::iter(urls).map(|url| {
         let client = client.clone();
         tokio::spawn(async move {
             let resp = client.get(url).send().await;
             resp.unwrap()
         })
-    }).buffer_unordered(parallelThreads);
+    }).buffer_unordered(parallel_threads);
     
     responses.for_each(|response| async{
         let resp = response.expect("Request: not possible to retrieve GET request");
