@@ -1,5 +1,6 @@
 use futures::{stream, StreamExt};
 use reqwest::Client;
+use std::collections::LinkedList;
 use std::env;
 use std::path::Path;
 use std::fs;
@@ -7,9 +8,8 @@ use std::thread::sleep;
 use std::time::Duration;
 const TXT_EXTENTION : &str = "txt";
 
-fn check_args_validness(args : &[String]) -> bool{
-    if args.len() < 3{
-        println!(
+fn print_help(){
+    println!(
         "   Usage:
 
         Insert [] element as a fuzz location, if there is a few [] elements - only the FIRST one will be used
@@ -19,7 +19,12 @@ fn check_args_validness(args : &[String]) -> bool{
         "   Example: 
 
         ./fuzzis https://example.com/[] home/my-directory/fuzz-list.txt 3 \n"
-        );
+    );
+}
+
+fn check_args_validness(args : &Vec<String>) -> bool{
+    if args.len() < 3{
+        print_help();
         return false;
     }
 
@@ -29,6 +34,29 @@ fn check_args_validness(args : &[String]) -> bool{
     }
     return true;
 }
+
+fn parse_args(args : &mut LinkedList<String>){
+    let mut url : String = String::new();
+    //let mut i = 0;
+    while !args.is_empty(){
+        let cur : String = args.pop_front().unwrap();
+        match cur.as_str(){
+            "-help" => {
+                print_help();
+                return;
+            },
+            "-url" => {
+                url = args.pop_front().expect("URL wasn't provided");
+            }
+            _ => {},
+        };
+    }
+    println!("url {}", url);
+    if url == ""{
+        panic!("Error: URL wasn't provided. Aborting");
+    }
+}
+
 async fn build_requests(args : &[String]){
     let uri = &args[1];
 
@@ -89,14 +117,24 @@ async fn build_requests(args : &[String]){
 }
 
 
-
 #[tokio::main]
 async fn main() {
-    let args : Vec<String> = env::args().collect();
+    println!("Starting: ");
+    println!("  _____              _     ");
+    println!(" |  ___|   _ _______(_)___ ");
+    println!(" | |_ | | | |_  /_  / / __|");
+    println!(" |  _|| |_| |/ / / /| \\__ \\");
+    println!(" |_|   \\__,_/___/___|_|___/");
+    println!("                           ");
+    sleep(Duration::from_secs(3));    
+
+    //let mut args : LinkedList<String> = env::args().collect();
+    let mut args : Vec<String> = env::args().collect();
     if !check_args_validness(&args){
         return;
     }
     build_requests(&args).await;
+    //parse_args(&mut args);
 }
 
 
