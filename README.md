@@ -9,12 +9,16 @@ cargo build
 ```
 
 ## Usage 
+**Console only!**
 Provide *uri* (-uri) and *wordlist* (-w). 
 To define where to fuzz - add [] (square brackets) inside uri
  
 ## Example
 ```
-./fuzzis -url https://examp[]le.com -w path/dir/my-wordlist.txt
+    Linux:
+        ./fuzzis -uri https://examp[]le.com -w path/dir/my-wordlist.txt
+    Windows:
+        fuzzis.exe -uri https://examp[]le.com -w path/dir/my-wordlist.txt
 ```
 
 ## Flags
