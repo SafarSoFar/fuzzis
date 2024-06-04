@@ -1,5 +1,6 @@
 # Fuzzis
-A CLI tool for web *directories/files enumeration*
+A CLI tool for web *fuzzing & brute-forcing, directories/files enumeration*. Written in Rust. 
+Fuzzis is a good option for CTF's, cybersecurity enthusiasts and business security testers.
 
 ## Build
 Build with cargo:
@@ -7,7 +8,25 @@ Build with cargo:
 cargo build
 ```
 
-## Usage
+## Usage 
+Provide *uri* (-uri) and *wordlist* (-w). 
+To define where to fuzz - add [] (square brackets) inside uri
+ 
+## Example
 ```
-./fuzzis (required:) -URL -wordlist.txt (optional:) -threads_amount
+./fuzzis -url https://examp[]le.com -w path/dir/my-wordlist.txt
+```
+
+## Flags
+```
+    Required:
+        -url : URL to buzz, brute-force
+        -w : wordlist *.txt only*
+    
+    Optional:
+        -t : amount of parallel threads. Default value is 3
+
+    Help:
+        -h, -help : prints help
+    
 ```
