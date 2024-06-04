@@ -35,9 +35,9 @@ fn check_args_validness(args : &Vec<String>) -> bool{
     return true;
 }
 
-fn parse_args(args : &mut LinkedList<String>){
-    let mut url : String = String::new();
-    //let mut i = 0;
+fn parse_args(args : &mut LinkedList<String>, url : &mut String, wordlist_path : &mut String, parallel_threads : &mut usize){
+
+
     while !args.is_empty(){
         let cur : String = args.pop_front().unwrap();
         match cur.as_str(){
@@ -45,42 +45,38 @@ fn parse_args(args : &mut LinkedList<String>){
                 print_help();
                 return;
             },
+            "-h" => {
+                print_help();
+                return;
+            },
             "-url" => {
-                url = args.pop_front().expect("URL wasn't provided");
+                *url = args.pop_front().expect("-url wasn't provided");
+            },
+            "-w" => {
+                *wordlist_path = args.pop_front().expect("-w wasn't provided");
             }
+            "-t" => {
+                *parallel_threads = args.pop_front().expect("-t wasn't provided")
+                .parse::<usize>().expect("Error: -t flag receives ONLY positive numeric value");
+            },
             _ => {},
         };
     }
-    println!("url {}", url);
     if url == ""{
-        panic!("Error: URL wasn't provided. Aborting");
+        panic!("Error: -url wasn't provided. Aborting");
     }
+    //println!("url {}", url);
+    //build_requests(url, wordlist_path, parallel_threads);
 }
 
-async fn build_requests(args : &[String]){
-    let uri = &args[1];
+async fn build_requests(uri : String, wordlist_path : String, parallel_threads : usize){
 
-    let wordlist = &args[2];
     let mut urls : Vec<String> = Vec::new();  
 
     let fuzz_index : usize = uri.find("[]").expect("Error: Nothing to fuzz.");
     let trimmed_brackets_uri = uri.replace("[]", "");
 
-    let mut parallel_threads : usize = 0;
-    match args.get(3){
-        Some(x) => {
-            parallel_threads = x.parse::<usize>().expect("Error: threads-amount is ONLY integer value");
-            println!("Using {} threads for requests", &parallel_threads);
-        },
-        None => {
-            // If user didn't provide threads - 3 threads by default
-            parallel_threads = 3; 
-            println!("Using default amount of threads - 3");
-        }
-    }
-
-
-    for line in fs::read_to_string(wordlist).unwrap().lines(){
+    for line in fs::read_to_string(wordlist_path).unwrap().lines(){
         let mut url = trimmed_brackets_uri.to_string();
         url.insert_str(fuzz_index, line);
         urls.push(url);
@@ -128,12 +124,16 @@ async fn main() {
     println!("                           ");
     sleep(Duration::from_secs(3));    
 
-    //let mut args : LinkedList<String> = env::args().collect();
-    let mut args : Vec<String> = env::args().collect();
+    /*let mut args : Vec<String> = env::args().collect();
     if !check_args_validness(&args){
         return;
-    }
-    build_requests(&args).await;
+    }*/
+    let mut args : LinkedList<String> = env::args().collect();
+    let mut url : String = String::new();
+    let mut wordlist_path: String = String::new();
+    let mut parallel_threads: usize = 3; // Default amount of threads
+    parse_args(&mut args, &mut url, &mut wordlist_path, &mut parallel_threads);
+    build_requests(url, wordlist_path, parallel_threads).await;
     //parse_args(&mut args);
 }
 
