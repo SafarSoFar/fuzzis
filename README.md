@@ -24,7 +24,7 @@ To define where to fuzz - add [] (square brackets) inside uri
 ## Flags
 ```
     Required:
-        -uri : URL to buzz, brute-force
+        -uri : URI to buzz, brute-force
         -w : wordlist *.txt only*
     
     Optional:
