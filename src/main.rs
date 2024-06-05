@@ -20,7 +20,7 @@ fn print_help(){
     println!(
         "Flags:
             Required:
-                -uri : URL to buzz, brute-force
+                -uri : URI to buzz, brute-force
                 -w : wordlist *.txt only*
     
             Optional:
